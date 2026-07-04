@@ -1,0 +1,7 @@
+# Throwaway runtime image for the ZAP scan stage. The pipeline builds this
+# from the workspace (jar just produced by mvnw), runs it on devsecops-net,
+# scans it, and removes it. Never published anywhere.
+FROM eclipse-temurin:17-jre
+COPY petclinic.jar /app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app.jar"]
