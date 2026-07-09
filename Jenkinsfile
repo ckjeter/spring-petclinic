@@ -73,8 +73,8 @@ pipeline {
                 // workspace (DooD cannot mount workspace paths directly).
                 sh '''
                   docker volume create zap_wrk >/dev/null
-                  docker run --rm -v zap_wrk:/zap/wrk alpine \
-                    sh -c 'chmod 777 /zap/wrk && rm -f /zap/wrk/zap-report.html /zap/wrk/zap.yaml'
+                  docker run --rm -v zap_wrk:/zap/wrk alpine chmod 777 /zap/wrk
+                  docker run --rm -v zap_wrk:/zap/wrk alpine rm -f /zap/wrk/zap-report.html /zap/wrk/zap.yaml
                   docker run --rm --network ${NET} -v zap_wrk:/zap/wrk -w /zap/wrk \
                     ghcr.io/zaproxy/zaproxy:stable \
                     zap-baseline.py -t http://${STAGING_NAME}:8080 -r zap-report.html -I || true
