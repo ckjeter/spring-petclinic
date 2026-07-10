@@ -11,8 +11,8 @@ pipeline {
     agent any
 
     triggers {
-        // Poll SCM every ~2 minutes (assignment: "build triggers to poll SCM")
-        pollSCM('H/2 * * * *')
+        // Poll SCM every minute for a demo-friendly trigger delay.
+        pollSCM('* * * * *')
     }
 
     options {
