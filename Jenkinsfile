@@ -84,8 +84,49 @@ pipeline {
             }
             post {
                 always {
-                    // tear down staging whether the scan worked or not
-                    sh 'docker rm -f ${STAGING_NAME} 2>/dev/null || true'
+                    // Capture evidence before tearing down the short-lived staging container.
+                    sh '''
+                      docker logs ${STAGING_NAME} > staging-container.log 2>&1 || true
+                      docker inspect ${STAGING_NAME} > staging-container-inspect.json 2>&1 || true
+                      docker rm -f ${STAGING_NAME} 2>/dev/null || true
+                    '''
+                    archiveArtifacts artifacts: 'zap-report.html,staging-container.log,staging-container-inspect.json', allowEmptyArchive: true
+                    sh '''
+                      mkdir -p /reports/${BUILD_NUMBER} /reports/latest
+                      cp zap-report.html /reports/${BUILD_NUMBER}/zap-report.html 2>/dev/null || true
+                      cp staging-container.log staging-container-inspect.json /reports/${BUILD_NUMBER}/ 2>/dev/null || true
+                      cp zap-report.html /reports/latest/zap-report.html 2>/dev/null || true
+                      cp staging-container.log staging-container-inspect.json /reports/latest/ 2>/dev/null || true
+                      cat > /reports/latest/index.html <<EOF
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Latest DevSecOps Reports</title></head>
+<body>
+  <h1>Latest DevSecOps Reports</h1>
+  <p>Jenkins build ${BUILD_NUMBER}</p>
+  <ul>
+    <li><a href="zap-report.html">ZAP Security Report</a></li>
+    <li><a href="staging-container.log">Staging Container Log</a></li>
+    <li><a href="staging-container-inspect.json">Staging Container Inspect JSON</a></li>
+  </ul>
+</body>
+</html>
+EOF
+                      cp /reports/latest/index.html /reports/${BUILD_NUMBER}/index.html
+                      cat > /reports/index.html <<EOF
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>DevSecOps Reports</title></head>
+<body>
+  <h1>DevSecOps Reports</h1>
+  <ul>
+    <li><a href="latest/">Latest build reports</a></li>
+    <li><a href="${BUILD_NUMBER}/">Build ${BUILD_NUMBER} reports</a></li>
+  </ul>
+</body>
+</html>
+EOF
+                    '''
                     publishHTML(target: [
                         reportDir: '.',
                         reportFiles: 'zap-report.html',
